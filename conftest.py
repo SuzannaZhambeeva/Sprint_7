@@ -1,50 +1,60 @@
 import pytest
 import requests
-import sys, os
-sys.path.append(os.path.dirname(__file__))
+import allure
+from data import COURIER_URL, LOGIN_URL
+from utils import generate_random_string
+
+@allure.step("Регистрация нового курьера")
+def register_new_courier_and_return_login_password():
+    """
+    Метод регистрации нового курьера
+    """
+    login_pass = []
+
+    login = generate_random_string(10)
+    password = generate_random_string(10)
+    first_name = generate_random_string(10)
+
+    payload = {
+        "login": login,
+        "password": password,
+        "firstName": first_name
+    }
+
+    response = requests.post(COURIER_URL, json=payload)
+    if response.status_code == 201:
+        login_pass.extend([login, password, first_name])
+        allure.attach(str(payload), name="Payload", attachment_type=allure.attachment_type.JSON)
+        allure.attach(str(response.json()), name="Response", attachment_type=allure.attachment_type.JSON)
+    else:
+        allure.attach(str(response.status_code), name="Ошибка регистрации", attachment_type=allure.attachment_type.TEXT)
+
+    return login_pass
+
 
 @pytest.fixture
 def new_courier():
-    creds = register_new_courier_and_return_login_password()
-    assert creds, "Не удалось создать нового курьера"
-    login, password, first_name = creds
-    yield {"login": login, "password": password, "firstName": first_name}
+    """
+    Фикстура для создания нового курьера перед тестом.
+    Возвращает словарь с login, password, firstName.
+    После теста курьер удаляется.
+    """
+    login_pass = register_new_courier_and_return_login_password()
+    assert login_pass, "Не удалось создать курьера"
 
-@pytest.fixture
-def courier_id(new_courier):
-    payload = {"login": new_courier["login"], "password": new_courier["password"]}
-    response = requests.post(f"{COURIER_URL}/login", json=payload)
-    assert response.status_code == 200, f"Не удалось авторизовать курьера, статус {response.status_code}"
-    body = response.json()
-    assert "id" in body, "В ответе нет id курьера"
-    return body["id"]
+    courier_data = {
+        "login": login_pass[0],
+        "password": login_pass[1],
+        "firstName": login_pass[2]
+    }
 
-@pytest.fixture
-def test_order():
-    def _create_order(colors=None):
-        order = {
-            "firstName": "Ivan",
-            "lastName": "Ivanov",
-            "address": "Moscow, Red Square, 1",
-            "metroStation": 1,
-            "phone": "+79999999999",
-            "rentTime": 5,
-            "deliveryDate": "2025-08-20",
-            "comment": "Test order",
-            "color": colors or []
-        }
-        response = requests.post(ORDER_URL, json=order)
-        assert response.status_code == 201, f"Не удалось создать заказ, статус {response.status_code}"
-        body = response.json()
-        assert "track" in body, "В ответе нет track"
-        return body
-    return _create_order
+    yield courier_data
 
-@pytest.fixture
-def delete_courier_after_test():
-    created_ids = []
-
-    yield created_ids
-
-    for courier_id in created_ids:
-        requests.delete(f"{COURIER_URL}/{courier_id}")
+    with allure.step("Удаляем курьера после теста"):
+        login_payload = {"login": courier_data["login"], "password": courier_data["password"]}
+        login_resp = requests.post(LOGIN_URL, json=login_payload)
+        if login_resp.status_code == 200:
+            courier_id = login_resp.json().get("id")
+            if courier_id:
+                del_resp = requests.delete(f"{COURIER_URL}/{courier_id}")
+                allure.attach(str(del_resp.status_code), name="Удаление курьера", attachment_type=allure.attachment_type.TEXT)

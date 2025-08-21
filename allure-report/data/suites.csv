@@ -1,0 +1,23 @@
+"Status","Start Time","Stop Time","Duration in ms","Parent Suite","Suite","Sub Suite","Test Class","Test Method","Name","Description"
+"passed","Thu Aug 21 04:17:36 MSK 2025","Thu Aug 21 04:17:38 MSK 2025","1395","tests","test_orders","TestCreateOrder","","","test_create_order_various_colors[color0]",""
+"passed","Thu Aug 21 04:16:03 MSK 2025","Thu Aug 21 04:16:06 MSK 2025","2560","tests","test_courier_creation","TestCreateCourier","","","test_create_courier_success","
+        Тест проверяет успешное создание курьера.
+        "
+"passed","Thu Aug 21 04:17:41 MSK 2025","Thu Aug 21 04:17:42 MSK 2025","1409","tests","test_orders","TestCreateOrder","","","test_create_order_various_colors[color3]",""
+"passed","Thu Aug 21 04:16:35 MSK 2025","Thu Aug 21 04:17:36 MSK 2025","61331","tests","test_courier_login","TestCourierLogin","","","test_login_missing_field[password-504-None]",""
+"passed","Thu Aug 21 04:16:15 MSK 2025","Thu Aug 21 04:16:17 MSK 2025","1447","tests","test_courier_creation","TestCreateCourier","","","test_create_courier_missing_fields[password-\u041d\u0435\u0434\u043e\u0441\u0442\u0430\u0442\u043e\u0447\u043d\u043e \u0434\u0430\u043d\u043d\u044b\u0445 \u0434\u043b\u044f \u0441\u043e\u0437\u0434\u0430\u043d\u0438\u044f \u0443\u0447\u0435\u0442\u043d\u043e\u0439 \u0437\u0430\u043f\u0438\u0441\u0438]","
+        Тест проверяет, что создание курьера без обязательных полей возвращает конкретную ошибку.
+        "
+"passed","Thu Aug 21 04:16:14 MSK 2025","Thu Aug 21 04:16:15 MSK 2025","1563","tests","test_courier_creation","TestCreateCourier","","","test_create_courier_missing_fields[login-\u041d\u0435\u0434\u043e\u0441\u0442\u0430\u0442\u043e\u0447\u043d\u043e \u0434\u0430\u043d\u043d\u044b\u0445 \u0434\u043b\u044f \u0441\u043e\u0437\u0434\u0430\u043d\u0438\u044f \u0443\u0447\u0435\u0442\u043d\u043e\u0439 \u0437\u0430\u043f\u0438\u0441\u0438]","
+        Тест проверяет, что создание курьера без обязательных полей возвращает конкретную ошибку.
+        "
+"passed","Thu Aug 21 04:17:38 MSK 2025","Thu Aug 21 04:17:39 MSK 2025","1464","tests","test_orders","TestCreateOrder","","","test_create_order_various_colors[color1]",""
+"passed","Thu Aug 21 04:17:39 MSK 2025","Thu Aug 21 04:17:41 MSK 2025","1296","tests","test_orders","TestCreateOrder","","","test_create_order_various_colors[color2]",""
+"passed","Thu Aug 21 04:16:24 MSK 2025","Thu Aug 21 04:16:25 MSK 2025","1361","tests","test_courier_login","TestCourierLogin","","","test_login_wrong_login",""
+"passed","Thu Aug 21 04:17:42 MSK 2025","Thu Aug 21 04:17:47 MSK 2025","5463","tests","test_orders","TestOrdersList","","","test_get_orders_list",""
+"passed","Thu Aug 21 04:16:08 MSK 2025","Thu Aug 21 04:16:14 MSK 2025","5159","tests","test_courier_creation","TestCreateCourier","","","test_create_same_courier_twice_fails","
+        Тест проверяет, что создание курьера с уже существующим логином возвращает ошибку.
+        "
+"passed","Thu Aug 21 04:16:33 MSK 2025","Thu Aug 21 04:16:35 MSK 2025","1541","tests","test_courier_login","TestCourierLogin","","","test_login_missing_field[login-400-\u041d\u0435\u0434\u043e\u0441\u0442\u0430\u0442\u043e\u0447\u043d\u043e \u0434\u0430\u043d\u043d\u044b\u0445 \u0434\u043b\u044f \u0432\u0445\u043e\u0434\u0430]",""
+"passed","Thu Aug 21 04:16:18 MSK 2025","Thu Aug 21 04:16:19 MSK 2025","1308","tests","test_courier_login","TestCourierLogin","","","test_login_success",""
+"passed","Thu Aug 21 04:16:29 MSK 2025","Thu Aug 21 04:16:31 MSK 2025","1553","tests","test_courier_login","TestCourierLogin","","","test_login_wrong_password",""

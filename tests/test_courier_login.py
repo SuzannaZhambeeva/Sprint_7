@@ -1,38 +1,52 @@
-import requests
 import pytest
+import requests
 import allure
-from helpers import register_new_courier_and_return_login_password, LOGIN_URL
+from conftest import generate_random_string
+from data import LOGIN_URL
 
 
-@allure.feature("Логин курьера")
+@allure.feature("Авторизация курьера")
 class TestCourierLogin:
 
-    @allure.story("Курьер может авторизоваться; успешный ответ содержит id")
-    def test_courier_can_login(self):
-        login, password, _ = register_new_courier_and_return_login_password()
-        response = requests.post(LOGIN_URL, json={"login": login, "password": password})
+    @allure.step("Авторизация с корректными данными")
+    def test_login_success(self, new_courier):
+        payload = {"login": new_courier["login"], "password": new_courier["password"]}
+        response = requests.post(LOGIN_URL, json=payload)
         assert response.status_code == 200
         body = response.json()
-        assert "id" in body and isinstance(body["id"], int)
+        assert "id" in body
+        assert isinstance(body["id"], int)
 
-    @allure.story("Система вернёт ошибку при неверном логине/пароле; код 404")
-    def test_wrong_credentials(self):
-        login, password, _ = register_new_courier_and_return_login_password()
-        response = requests.post(LOGIN_URL, json={"login": login, "password": "wrongpwd"})
-        assert response.status_code == 404
-
-    @allure.story("Для авторизации нужны обязательные поля; при отсутствии — 400")
-    @pytest.mark.parametrize("payload", [
-        {"password": "123456"},
-        {"login": "someuser"},
-    ])
-    def test_login_missing_fields(self, payload):
+    @allure.step("Авторизация с неверным логином")
+    def test_login_wrong_login(self, new_courier):
+        payload = {"login": "wrong_login", "password": new_courier["password"]}
         response = requests.post(LOGIN_URL, json=payload)
-        assert response.status_code in [400, 504], f"Ожидали 400 или 504, получили {response.status_code}"
-    
-    @allure.story("Система вернёт ошибку при авторизации несуществующего курьера; код 404")
-    def test_login_nonexistent_user(self):
-        response = requests.post(LOGIN_URL, json={"login": "nosuchuser", "password": "nopass"})
         assert response.status_code == 404
-        body = response.json()
-        assert "message" in body
+        assert response.json().get("message") == "Учетная запись не найдена"
+
+    @allure.step("Авторизация с неверным паролем")
+    def test_login_wrong_password(self, new_courier):
+        payload = {"login": new_courier["login"], "password": "wrong_password"}
+        response = requests.post(LOGIN_URL, json=payload)
+        assert response.status_code == 404
+        assert response.json().get("message") == "Учетная запись не найдена"
+
+    @allure.step("Авторизация с пропущенным полем")
+    @pytest.mark.parametrize("missing_field, expected_status, expected_message", [
+        ("login", 400, "Недостаточно данных для входа"),
+        ("password", 504, None),
+    ])
+    def test_login_missing_field(self, missing_field, expected_status, expected_message):
+        payload = {
+            "login": generate_random_string(),
+            "password": generate_random_string()
+        }
+        payload.pop(missing_field)
+        response = requests.post(LOGIN_URL, json=payload)
+
+        assert response.status_code == expected_status
+
+        if expected_message: 
+            assert response.json().get("message") == expected_message
+        else: 
+            assert response.text != ""  

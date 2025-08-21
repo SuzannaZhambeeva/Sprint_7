@@ -1,48 +1,66 @@
-import requests
 import pytest
+import requests
 import allure
-from helpers import register_new_courier_and_return_login_password, COURIER_URL
+from utils import generate_random_string
+from data import COURIER_URL, LOGIN_URL
 
 @allure.feature("Создание курьера")
-class TestCourierCreation:
+class TestCreateCourier:
 
-    @allure.story("Курьера можно создать; успешный ответ и тело {\"ok\": true}")
-    def test_create_courier_success(self):
-        creds = register_new_courier_and_return_login_password()
-        assert creds, "Курьер не создался"
+    @allure.step("Проверяем успешное создание курьера")
+    def test_create_courier_success(self, new_courier):
+        """
+        Тест проверяет успешное создание курьера.
+        """
+        login_payload = {
+            "login": new_courier["login"],
+            "password": new_courier["password"]
+        }
+        login_resp = requests.post(LOGIN_URL, json=login_payload)
+        assert login_resp.status_code == 200
+        assert "id" in login_resp.json()
 
-        login, password, first_name = creds
-
-        payload = {"login": login, "password": password, "firstName": first_name}
-        response = requests.post(COURIER_URL, json=payload)
-
-        assert response.status_code in [201, 409], f"Ожидали 201 или 409, получили {response.status_code}"
-
-        if response.status_code == 201:
-            body = response.json()
-            assert "ok" in body and body["ok"] is True, "Тело ответа не содержит {'ok': true}"
-
-    @allure.story("Нельзя создать двух одинаковых курьеров; код 409 и ошибка")
+    @allure.step("Создаем курьера с уже существующим логином")
     def test_create_same_courier_twice_fails(self):
-        login, password, first_name = register_new_courier_and_return_login_password()
-        payload = {"login": login, "password": password, "firstName": first_name}
-        response = requests.post(COURIER_URL, json=payload)
+        """
+        Тест проверяет, что создание курьера с уже существующим логином возвращает ошибку.
+        """
+        payload = {
+            "login": generate_random_string(),
+            "password": generate_random_string(),
+            "firstName": generate_random_string()
+        }
 
-        assert response.status_code == 409, f"Ожидали 409, получили {response.status_code}"
-        body = response.json()
-        assert "message" in body, "Нет поля message в ошибке"
-        assert body["message"], "Сообщение об ошибке пустое"
+        response1 = requests.post(COURIER_URL, json=payload)
+        assert response1.status_code == 201
 
-    @allure.story("Чтобы создать курьера, нужны обязательные поля; код 400")
-    @pytest.mark.parametrize("payload", [
-        {"password": "123456", "firstName": "Ivan"},
-        {"login": "testuser", "firstName": "Ivan"},
+        response2 = requests.post(COURIER_URL, json=payload)
+        assert response2.status_code == 409
+
+        login_resp = requests.post(LOGIN_URL, json={"login": payload["login"], "password": payload["password"]})
+        courier_id = login_resp.json().get("id")
+        if courier_id:
+            requests.delete(f"{COURIER_URL}/{courier_id}")
+
+    @allure.step("Создаем курьера без обязательных полей")
+    @pytest.mark.parametrize("missing_field, expected_message", [
+        ("login", "Недостаточно данных для создания учетной записи"),
+        ("password", "Недостаточно данных для создания учетной записи")
     ])
-    def test_create_courier_missing_fields(self, payload):
-        response = requests.post(COURIER_URL, json=payload)
+    def test_create_courier_missing_fields(self, missing_field, expected_message):
+        """
+        Тест проверяет, что создание курьера без обязательных полей возвращает конкретную ошибку.
+        """
+        payload = {
+            "login": generate_random_string(),
+            "password": generate_random_string(),
+            "firstName": generate_random_string()
+        }
+        payload.pop(missing_field)
 
+        response = requests.post(COURIER_URL, json=payload)
         assert response.status_code == 400, f"Ожидали 400, получили {response.status_code}"
 
         body = response.json()
-        assert "message" in body, "Нет поля message в ошибке"
-        assert body["message"], "Сообщение об ошибке пустое"
+        assert "message" in body, "В ответе нет поля 'message'"
+        assert body["message"] == expected_message, f"Ожидали сообщение '{expected_message}', получили '{body['message']}'"
