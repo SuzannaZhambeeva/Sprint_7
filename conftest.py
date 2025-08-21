@@ -4,13 +4,13 @@ import allure
 from data import COURIER_URL, LOGIN_URL
 from utils import generate_random_string
 
-@allure.step("Регистрация нового курьера")
+
 def register_new_courier_and_return_login_password():
     """
-    Метод регистрации нового курьера
+    Метод регистрации нового курьера.
+    Возвращает словарь с login, password, firstName.
+    В случае ошибки бросает исключение.
     """
-    login_pass = []
-
     login = generate_random_string(10)
     password = generate_random_string(10)
     first_name = generate_random_string(10)
@@ -21,15 +21,15 @@ def register_new_courier_and_return_login_password():
         "firstName": first_name
     }
 
-    response = requests.post(COURIER_URL, json=payload)
-    if response.status_code == 201:
-        login_pass.extend([login, password, first_name])
+    with allure.step("Регистрируем нового курьера"):
+        response = requests.post(COURIER_URL, json=payload)
         allure.attach(str(payload), name="Payload", attachment_type=allure.attachment_type.JSON)
-        allure.attach(str(response.json()), name="Response", attachment_type=allure.attachment_type.JSON)
-    else:
-        allure.attach(str(response.status_code), name="Ошибка регистрации", attachment_type=allure.attachment_type.TEXT)
+        allure.attach(str(response.status_code) + " " + str(response.text), name="Response", attachment_type=allure.attachment_type.JSON)
 
-    return login_pass
+        if response.status_code != 201:
+            raise Exception(f"Не удалось создать курьера: {response.status_code} {response.text}")
+
+    return {"login": login, "password": password, "firstName": first_name}
 
 
 @pytest.fixture
@@ -39,17 +39,10 @@ def new_courier():
     Возвращает словарь с login, password, firstName.
     После теста курьер удаляется.
     """
-    login_pass = register_new_courier_and_return_login_password()
-    assert login_pass, "Не удалось создать курьера"
-
-    courier_data = {
-        "login": login_pass[0],
-        "password": login_pass[1],
-        "firstName": login_pass[2]
-    }
-
+    courier_data = register_new_courier_and_return_login_password()
     yield courier_data
 
+    # Удаление курьера после теста
     with allure.step("Удаляем курьера после теста"):
         login_payload = {"login": courier_data["login"], "password": courier_data["password"]}
         login_resp = requests.post(LOGIN_URL, json=login_payload)
@@ -58,3 +51,5 @@ def new_courier():
             if courier_id:
                 del_resp = requests.delete(f"{COURIER_URL}/{courier_id}")
                 allure.attach(str(del_resp.status_code), name="Удаление курьера", attachment_type=allure.attachment_type.TEXT)
+        else:
+            allure.attach(str(login_resp.status_code), name="Ошибка при логине для удаления курьера", attachment_type=allure.attachment_type.TEXT)
